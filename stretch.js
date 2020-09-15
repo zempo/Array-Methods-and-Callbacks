@@ -196,3 +196,14 @@ function getFifaGames(data) {
 }
 
 getFifaGames(fifaCountries);
+
+function queryCountries(data, query, type) {
+  return data.filter((el) => el.initials === query)[0][type];
+}
+
+console.log(
+  "\nStretch 4:",
+  queryCountries(fifaCountries, "USA", "appearances")
+);
+
+console.log("\nStretch 5:", queryCountries(fifaCountries, "USA", "goals"));
