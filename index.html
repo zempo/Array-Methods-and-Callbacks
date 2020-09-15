@@ -6,9 +6,91 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   </head>
   <body>
-    <p>Open up the console to check your work!</p>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body,
+      main {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #202020;
+      }
+      .games-list {
+        list-style-type: none;
+        padding-left: 0;
+        display: flex;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        width: 100%;
+        margin: 0;
+      }
+      .games-list ul {
+        list-style-type: none;
+        padding-left: 0;
+        font-size: large;
+      }
+      .games-container .games-list > li {
+        width: calc(25% - 10px);
+        margin: 5px;
+        padding: 30px 10px;
+        border: 1px solid rgb(75, 75, 75);
+        border-radius: 5px;
+        text-align: center;
+        opacity: 0.8;
+        transition: all 0.3s;
+      }
+      .games-list > li li {
+        font-family: sans-serif;
+        line-height: 1.75;
+      }
 
+      .games-list h2 {
+        text-transform: uppercase;
+        margin-top: 0;
+      }
+
+      .games-container .games-list > li:hover {
+        opacity: 1;
+        transition: all 0.3s;
+      }
+
+      .games-container .games-list > li:nth-child(5n - 5) {
+        background-color: #676f54;
+        color: #d7f2ba;
+      }
+
+      .games-container .games-list > li:nth-child(5n - 4) {
+        background-color: #d7f2ba;
+        color: #676f54;
+      }
+
+      .games-container .games-list > li:nth-child(5n - 3) {
+        background-color: #bde4a8;
+        color: #424736;
+      }
+
+      .games-container .games-list > li:nth-child(5n - 2) {
+        background-color: #9cc69b;
+        color: #3f4434;
+      }
+
+      .games-container .games-list > li:nth-child(5n - 1) {
+        background-color: #79b4a9;
+        color: #404635;
+      }
+    </style>
+    <main>
+      <section class="games-container">
+        <ul class="games-list"></ul>
+      </section>
+      <p>Open up the console to check your work!</p>
+    </main>
     <script type="text/JavaScript" src="fifa.js"></script>
     <script type="module" src="index.js"></script>
+    <script type="module" src="stretch.js"></script>
   </body>
 </html>

@@ -12,19 +12,29 @@ import { fifaData } from "./fifa.js";
 (d) Away Team goals for 2014 world cup final
 (e) Winner of 2014 world cup final */
 
-// console.log(fifaData[828]);
+// make a helper
+
+function get2014(data) {
+  return data.filter((g) => {
+    if (g["Stage"] === "Final" && g["Year"] == 2014) {
+      return true;
+    }
+  });
+}
+
+const final2014 = get2014(fifaData)[0];
 
 console.log(
   "Task1:\n",
-  `(a) ${fifaData[828]["Home Team Name"]}`,
+  `(a) ${final2014["Home Team Name"]}`,
   "\n",
-  `(b) ${fifaData[828]["Away Team Name"]}`,
+  `(b) ${final2014["Away Team Name"]}`,
   "\n",
-  `(c) ${fifaData[828]["Home Team Goals"]}`,
+  `(c) ${final2014["Home Team Goals"]}`,
   "\n",
-  `(d) ${fifaData[828]["Away Team Goals"]}`,
+  `(d) ${final2014["Away Team Goals"]}`,
   "\n",
-  `(e) ${fifaData[828]["Win conditions"]}`
+  `(e) ${final2014["Win conditions"]}`
 );
 
 /* Task 2: Create a function called  getFinals that takes `data` as an argument and returns an array of objects with only finals data */
@@ -85,6 +95,9 @@ function getWinnersByYear(data, cb1, cb2) {
   let year = cb2(data, getFinals);
 
   return winner.map((el, i) => {
+    if (el.includes("&")) {
+      return `In ${year[i]}, there was a tie between ${el}!`;
+    }
     return `In ${year[i]}, ${el} won the world cup!`;
   });
 }
@@ -112,31 +125,348 @@ console.log("Task 6:", getAverageGoals(fifaData));
 
 /// STRETCH 🥅 //
 
-/* Stretch 1: Create a function called `getCountryWins` that takes the parameters `data` and `team initials` and returns the number of world cup wins that country has had. 
+/* Stretch 1: Create a function called `getCountryWins` that takes the parameters `data` and `team initials`
+ and returns the number of world cup wins that country has had. 
 
 Hint: Investigate your data to find "team initials"!
 Hint: use `.reduce` */
 
-function getCountryWins(/* code here */) {
-  /* code here */
+function getCountryWins(data, query) {
+  let wins = data.reduce((acc, cur) => {
+    const conditions = {
+      isHome: cur["Home Team Initials"] === query,
+      homeWins: cur["Home Team Goals"] > cur["Away Team Goals"],
+      isAway: cur["Away Team Initials"] === query,
+      awayWins: cur["Away Team Goals"] > cur["Home Team Goals"],
+    };
+
+    if (conditions.isHome) {
+      if (conditions.homeWins) return acc + 1;
+      return acc;
+    } else if (conditions.isAway) {
+      if (conditions.awayWins) return acc + 1;
+      return acc;
+    } else {
+      return acc;
+    }
+  }, 0);
+
+  return `${wins} World Cup Game Wins for ${query}`;
 }
 
-getCountryWins();
+getCountryWins(fifaData, "FRA");
+console.log("Stretch 1:", getCountryWins(fifaData, "FRA"));
+console.log("Stretch 1:", getCountryWins(fifaData, "USA"));
+console.log("Stretch 1:", getCountryWins(fifaData, "YUG"));
+/* Stretch 3: Write a function called getGoals() that accepts a parameter `data` and 
+returns the team with the most goals score per appearance (average goals for) in the World Cup finals */
+var participantGoals = [];
 
-/* Stretch 3: Write a function called getGoals() that accepts a parameter `data` and returns the team with the most goals score per appearance (average goals for) in the World Cup finals */
-
-function getGoals(/* code here */) {
-  /* code here */
+function goalSort(prop, order) {
+  var sort_order = 1;
+  if (order === "desc") {
+    sort_order = -1;
+  }
+  return (a, b) => {
+    if (a[prop] < b[prop]) {
+      return -1 * sort_order;
+    } else if (a[prop] > b[prop]) {
+      return 1 * sort_order;
+    } else {
+      return 0 * sort_order;
+    }
+  };
 }
 
-getGoals();
-
-/* Stretch 4: Write a function called badDefense() that accepts a parameter `data` and calculates the team with the most goals scored against them per appearance (average goals against) in the World Cup finals */
-
-function badDefense(/* code here */) {
-  /* code here */
+function teamExists(data, query) {
+  let exists = false;
+  data.forEach((el) => {
+    if (el.name === query) {
+      exists = true;
+    }
+  });
+  return exists;
 }
 
-badDefense();
+function getTeamIdx(data, query) {
+  let targetIdx;
+  data.forEach((el, local_i) => {
+    if (el.name === query) {
+      targetIdx = local_i;
+    }
+  });
+  return targetIdx;
+}
+
+function getGoals(data, cb, cb2, cb3) {
+  let currentTeam = "";
+  var goalAcc = 0;
+  var appearancesAcc = 0;
+  let teamGoals = [];
+
+  // accumulate home game goals
+  data.forEach((g, i_main, Games) => {
+    const conditions = {
+      isHome: g["Home Team Name"] === currentTeam,
+      inResults: cb2(teamGoals, g["Home Team Name"]),
+    };
+
+    // still on the current, accumulating team
+    if (conditions.isHome) {
+      goalAcc += g["Home Team Goals"];
+      appearancesAcc += 1;
+
+      // end of data
+      if (i_main === Games.length - 1) {
+        teamGoals[cb3(teamGoals, g["Home Team Name"])].goals +=
+          g["Home Team Goals"] + goalAcc;
+
+        teamGoals[cb3(teamGoals, g["Home Team Name"])].appearances +=
+          1 + appearancesAcc;
+      }
+      // on a new team
+    } else {
+      // has been mapped before
+      if (currentTeam !== "" && conditions.inResults) {
+        // retrack team
+        currentTeam = g["Home Team Name"];
+        goalAcc = 0;
+        appearancesAcc = 0;
+
+        teamGoals[cb3(teamGoals, g["Home Team Name"])].goals +=
+          g["Home Team Goals"];
+
+        teamGoals[cb3(teamGoals, g["Home Team Name"])].appearances += 1;
+      } else {
+        // start tracking 'new team'
+        currentTeam = g["Home Team Name"];
+        goalAcc = 0;
+        appearancesAcc = 0;
+
+        teamGoals.push({
+          name: g["Home Team Name"],
+          initials: g["Home Team Initials"],
+          goals: g["Home Team Goals"],
+          appearances: 1,
+        });
+      }
+    }
+  });
+
+  // accumulate away game goals
+  data.forEach((g, i_main, Games) => {
+    const conditions = {
+      isAway: g["Away Team Name"] === currentTeam,
+      inResults: cb2(teamGoals, g["Away Team Name"]),
+    };
+
+    // still on the current, accumulating team
+    if (conditions.isAway) {
+      goalAcc += g["Away Team Goals"];
+      appearancesAcc += 1;
+      // end of array
+      if (i_main === Games.length - 1) {
+        teamGoals[cb3(teamGoals, g["Away Team Name"])].goals +=
+          g["Away Team Goals"] + goalAcc;
+
+        teamGoals[cb3(teamGoals, g["Away Team Name"])].appearances +=
+          1 + appearancesAcc;
+      }
+      // on a new team
+    } else {
+      // has been mapped before
+      if (currentTeam !== "" && conditions.inResults) {
+        // retrack team
+        currentTeam = g["Away Team Name"];
+        goalAcc = 0;
+        appearancesAcc = 0;
+
+        teamGoals[cb3(teamGoals, g["Away Team Name"])].goals +=
+          g["Away Team Goals"];
+
+        teamGoals[cb3(teamGoals, g["Away Team Name"])].appearances += 1;
+        // has not been mapped before
+      } else {
+        // start tracking 'new team'
+        currentTeam = g["Away Team Name"];
+        goalAcc = 0;
+        appearancesAcc = 0;
+
+        teamGoals.push({
+          name: g["Away Team Name"],
+          initials: g["Away Team Initials"],
+          goals: g["Away Team Goals"],
+          appearances: 1,
+        });
+      }
+    }
+  });
+
+  let teamAvgs = teamGoals.map((t) => {
+    return {
+      name: t.name,
+      initials: t.initials,
+      goals: t.goals,
+      appearances: t.appearances,
+      goalAvg: t.goals / t.appearances,
+    };
+  });
+
+  participantGoals = teamAvgs.sort(cb("name", "desc"));
+
+  let bestTeam = teamAvgs.sort(cb("goalAvg", "desc"))[0];
+
+  return `\n \n"${bestTeam.initials}-${
+    bestTeam.name
+  }" was the highest scoring team on average\n \n${
+    bestTeam.goals
+  } total goals scored\n \n${(
+    bestTeam.goals / bestTeam.appearances
+  ).toPrecision(4)} over ${bestTeam.appearances} appearance(s)`;
+}
+
+getGoals(fifaData, goalSort, teamExists, getTeamIdx);
+console.log(
+  "\nStretch 2:",
+  getGoals(fifaData, goalSort, teamExists, getTeamIdx)
+);
+
+/* Stretch 4: Write a function called badDefense() that accepts a parameter `data`
+ and calculates the team with the most goals scored against them per appearance (average goals against) in the World Cup finals */
+var participants = [];
+
+function badDefense(data, cb, cb2, cb3) {
+  let currentTeam = "";
+  var goalAcc = 0;
+  var appearancesAcc = 0;
+  let teamAllowed = [];
+
+  // accumulate home game allowed goals
+  data.forEach((g, i_main, Games) => {
+    const conditions = {
+      isHome: g["Home Team Name"] === currentTeam,
+      inResults: cb2(teamAllowed, g["Home Team Name"]),
+    };
+
+    // still on the current, accumulating team
+    if (conditions.isHome) {
+      goalAcc += g["Away Team Goals"];
+      appearancesAcc += 1;
+
+      // end of data
+      if (i_main === Games.length - 1) {
+        teamAllowed[cb3(teamAllowed, g["Home Team Name"])].goals +=
+          g["Away Team Goals"] + goalAcc;
+
+        teamAllowed[cb3(teamAllowed, g["Home Team Name"])].appearances +=
+          1 + appearancesAcc;
+      }
+      // on a new team
+    } else {
+      // has been mapped before
+      if (currentTeam !== "" && conditions.inResults) {
+        // retrack team
+        currentTeam = g["Home Team Name"];
+        goalAcc = 0;
+        appearancesAcc = 0;
+
+        teamAllowed[cb3(teamAllowed, g["Home Team Name"])].goals +=
+          g["Away Team Goals"];
+
+        teamAllowed[cb3(teamAllowed, g["Home Team Name"])].appearances += 1;
+      } else {
+        // start tracking 'new team'
+        currentTeam = g["Home Team Name"];
+        goalAcc = 0;
+        appearancesAcc = 0;
+
+        teamAllowed.push({
+          name: g["Home Team Name"],
+          initials: g["Home Team Initials"],
+          goals: g["Home Team Goals"],
+          appearances: 1,
+        });
+      }
+    }
+  });
+
+  // accumulate away game allowed goals
+  data.forEach((g, i_main, Games) => {
+    const conditions = {
+      isAway: g["Away Team Name"] === currentTeam,
+      inResults: cb2(teamAllowed, g["Away Team Name"]),
+    };
+
+    // still on the current, accumulating team
+    if (conditions.isAway) {
+      goalAcc += g["Home Team Goals"];
+      appearancesAcc += 1;
+      // end of array
+      if (i_main === Games.length - 1) {
+        teamAllowed[cb3(teamAllowed, g["Away Team Name"])].goals +=
+          g["Home Team Goals"] + goalAcc;
+
+        teamAllowed[cb3(teamAllowed, g["Away Team Name"])].appearances +=
+          1 + appearancesAcc;
+      }
+      // on a new team
+    } else {
+      // has been mapped before
+      if (currentTeam !== "" && conditions.inResults) {
+        // retrack team
+        currentTeam = g["Away Team Name"];
+        goalAcc = 0;
+        appearancesAcc = 0;
+
+        teamAllowed[cb3(teamAllowed, g["Away Team Name"])].goals +=
+          g["Home Team Goals"];
+
+        teamAllowed[cb3(teamAllowed, g["Away Team Name"])].appearances += 1;
+        // has not been mapped before
+      } else {
+        // start tracking 'new team'
+        currentTeam = g["Away Team Name"];
+        goalAcc = 0;
+        appearancesAcc = 0;
+
+        teamAllowed.push({
+          name: g["Away Team Name"],
+          initials: g["Away Team Initials"],
+          goals: g["Home Team Goals"],
+          appearances: 1,
+        });
+      }
+    }
+  });
+
+  let teamAvgs = teamAllowed.map((t) => {
+    return {
+      name: t.name,
+      initials: t.initials,
+      goals: t.goals,
+      appearances: t.appearances,
+      goalAvg: t.goals / t.appearances,
+    };
+  });
+
+  participants = teamAvgs.sort(cb("name", "desc"));
+
+  let worstTeam = teamAvgs.sort(cb("goalAvg", "desc"))[0];
+
+  return `\n \n"${worstTeam.initials}-${
+    worstTeam.name
+  }" had the worst defense on average \n \n${
+    worstTeam.goals
+  } total goals were allowed\n \n${(
+    worstTeam.goals / worstTeam.appearances
+  ).toPrecision(4)} over ${worstTeam.appearances} appearance(s)`;
+}
+
+badDefense(fifaData, goalSort, teamExists, getTeamIdx);
+
+console.log(
+  "\nStretch 3:",
+  badDefense(fifaData, goalSort, teamExists, getTeamIdx)
+);
 
 /* If you still have time, use the space below to work on any stretch goals of your chosing as listed in the README file. */
